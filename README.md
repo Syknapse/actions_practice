@@ -1,8 +1,4 @@
-<<<<<<< Updated upstream
-# The Future in Tech!
-=======
 # Practice in creating GitHub actions
->>>>>>> Stashed changes
 
 Example repo where a podcast.xml file is automatically updated every time a new podcast entry is added to feed.yaml. 
 
