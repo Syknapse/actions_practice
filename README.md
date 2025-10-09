@@ -1,19 +1,108 @@
+<<<<<<< Updated upstream
 # The Future in Tech!
+=======
+# Practice in creating GitHub actions
+>>>>>>> Stashed changes
 
-<img src="https://raybo.org/tfit-feed/images/artwork.jpg" width="250">
+Example repo where a podcast.xml file is automatically updated every time a new podcast entry is added to feed.yaml. 
 
-The [Future in Tech](https://go.raybo.org/tfit) is a weekly series powered by [LinkedIn Learning](https://www.linkedin.com/learning/) hosted by Senior Staff Instructor [Ray Villalobos](https://www.linkedin.com/in/planetoftheweb).
+On push the workflow in .github/workflows/main.yml is triggered.
+This sets up the correct environment needed for running python, then runs the feed.py script.
+This script takes the simple format of the yaml feed entry and turns it into the xml podcast entry. It then rewrites the podcast.xml file updating it and commiting the result. 
 
-You can [watch it on LinkedIn](https://go.raybo.org/tfit-episodes) every Thursday at 2pm ET, 11am PT. The goal of this series is to spark conversations, provide practical tips and resources to help developers work, learn, and tackle challenges related to working in the technology industry.
+## Publishing a marketplace action
 
-We're talking about Generative AI tools like ChatGPT, Dall-E*2, Hugging Face by talking to some of the leaders delivering the tools, strategies and technologies that make working in technology exciting. We'll discuss how they broke into technology, business strategies, ethical concerns and technical skills.
+Create a repo for the action to be published, add readme and license
 
-You have a chance to hear from people who are not just talking about, but building the next generation tools like Open AI and leaders who've worked for and with Fortune 500 companies like Microsoft, Google, LinkedIn,  IBM,  Open AI and more.
+Add the script file that needs to be executed 
 
----
-## More Info
-- [The Future in Tech Page](https://go.raybo.org/tfit)
-- [Episode Guide](https://go.raybo.org/tfit-episodes)
-- [YouTube Playlist](https://go.raybo.org/tfit-youtube)
-- [Podcast Feed - Audio Only](https://go.raybo.org/tfit-feed-audio)
-- [Episode Newsletter](https://go.raybo.org/tfit-newsletter)
+Create an entrypoint file
+
+- Example entrypoint.sh
+    
+    ```bash
+    #!/bin/bash
+    
+    echo "========ENTRYPOINT START==========="
+    
+    git config --global user.name "${GITHUB_ACTOR}"
+    git config --global --add safe.directory /github/workspace
+    
+    python3 /usr/bin/feed.py
+    
+    git add -A && git commit -m "Update feed"
+    git push --set-upstream origin main
+    
+    echo "=========ENTRYPOINT END============"
+    ```
+    
+
+Change entrypoint.sh write permissions making it executable
+ `chmod -R 775 entrypoint.sh`
+
+Create a Dockerfile 
+
+- Example Dockerfile
+    
+    ```docker
+    FROM ubuntu:latest
+    
+    RUN apt-get update && apt-get install -y \
+    	python3.10 \
+    	python3-pip \
+    	git
+    	
+    RUN pip3 install PyYAML
+    
+    COPY feed.py /usr/bin//feed.py
+    
+    COPY entrypoint.sh /entypoint.sh
+    
+    ENTRYPOINT ["/entrypoint.sh"]
+    ```
+    
+
+Create action file
+
+- Example action.yml
+    
+    ```yaml
+    name: "Podcast Generator"
+    author: "Fulanito"
+    description: "Generates a feed for a podcast from a YAML file"
+    runs: 
+    	using: "docker"
+    	image: "Dockerfile"
+    branding: 
+    	icon: "git-branch" # from Feather icons
+    	color: "red"
+    inputs: 
+    	email:
+    		description: The commiter's email address
+    		required: true
+    		default: ${{ github.actor }}@localhost
+    	name:
+    		description: The commiter's name
+    		required: true
+    		default: ${{ github.actor }}
+    ```
+    
+
+Now you can use this action from another repo
+
+```yaml
+name: Generate Podcast Feed
+on: [push]
+jobs: 
+  build: 
+    runs-on: ubuntu-latest
+    steps:
+     - name: Checkout Repo
+       uses: actions/checkout@v3
+     - name: Run feed generator # the action from the other repo
+       uses: syknapse/custom-action@main # action repo: <gitHub_username>/<repo>@version/branch
+```
+
+To release action in GitHub Marketplace:
+
+Draft a release (from side menu in repo or usually when GitHub detects it’s an action it gives you the option as a banner). Once you fill the details and publish the release it’ll be published in the market place.
